@@ -1,12 +1,14 @@
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 
 import auth from '../../firebase.config';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useRef } from 'react';
 
 const Login = () => {
     const [registerError, setRegisterError] = useState('');
     const [success, setSuccess] = useState('');
+    const emailRef = useRef(null);
 
     const handleLogin = e => {
         e.preventDefault();
@@ -23,7 +25,9 @@ const Login = () => {
         signInWithEmailAndPassword(auth, email, password)
             .then(result => {
                 console.log(result.user);
-                setSuccess('user logged in successfully');
+                if (result.user.emailVerified) {
+                    setSuccess('user logged in successfully');
+                }
             })
             .catch(error => {
                 {
@@ -33,6 +37,26 @@ const Login = () => {
 
             })
 
+    }
+
+    const handleResetPassword = () => {
+        const email = emailRef.current.value;
+        if (!email) {
+            console.log('send reset email', emailRef.current.value)
+            return;
+        }
+        else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
+        ) {
+            console.log('please write a valid email')
+        }
+        // send validation email:
+        sendPasswordResetEmail(auth, email)
+            .then(() => {
+                alert('please check your email')
+            })
+            .catch(error => {
+                console.log(error)
+            })
     }
 
     return (
@@ -49,7 +73,9 @@ const Login = () => {
                                 <label className="label">
                                     <span className="label-text">Email</span>
                                 </label>
-                                <input type="email" placeholder="email" name='email' className="input input-bordered" />
+                                <input type="email" placeholder="email" name='email'
+                                    ref={emailRef}
+                                    className="input input-bordered" />
                             </div>
                             <div className="form-control">
                                 <label className="label">
@@ -57,7 +83,7 @@ const Login = () => {
                                 </label>
                                 <input type="password" name='password' placeholder="password" className="input input-bordered" />
                                 <label className="label">
-                                    <a href="#" className="label-text-alt link link-hover">Forgot password?</a>
+                                    <a onClick={handleResetPassword} href="#" className="label-text-alt link link-hover">Forgot password?</a>
                                 </label>
                             </div>
                             <div className="form-control mt-6">
